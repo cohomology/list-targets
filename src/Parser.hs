@@ -13,17 +13,16 @@ newtype SourceFileMap = SourceFileMap (StrictMap.Map SourceFile Library)
 -- if the last character in the line is a backslash (not escaped by another backslash)
 splitLines :: String -> [String]                                              
 splitLines str = doSplit (dropWhile isSpace str) [] False 
-                 where handleComment :: String -> String -> Bool -> String
-                       handleComment a b True = a ++ b
-                       handleComment _ b False = b
+                 where handleComment a b False = a ++ b
+                       handleComment a _ True = a
                        doSplit :: String -> String -> Bool -> [String]
                        doSplit []             u _     = [u]
-                       doSplit ('\\':'\\':xs) u c     = doSplit xs (handleComment "\\" u c) c
+                       doSplit ('\\':'\\':xs) u c     = doSplit xs (handleComment u "\\" c) c
                        doSplit ('\\':'\n':xs) u c     = doSplit xs u c
                        doSplit ('\n':xs)      u _     = [u] ++ doSplit (dropWhile isSpace xs) [] False
-                       doSplit ('\\':'#':xs)  u c     = doSplit xs (handleComment "#" u c) c
+                       doSplit ('\\':'#':xs)  u c     = doSplit xs (handleComment u "#" c) c
                        doSplit ('#':xs)       u _     = doSplit xs u True
-                       doSplit (x:xs)         u c     = doSplit xs (handleComment [x] u c) c 
+                       doSplit (x:xs)         u c     = doSplit xs (handleComment u [x] c) c 
 
 parseMake :: MakeTargetMap -> SourceFileMap -> String -> (MakeTargetMap, SourceFileMap)
 parseMake a b _ = (a,b)  
